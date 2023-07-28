@@ -11,7 +11,7 @@ import numpy as np
 
 
 #reads in National Address Database data for the Bronx (36005) - 'bronx_data'
-file_path = '../dspg23_reverse_geocoder/36005.csv'
+file_path = '../dspg23_reverse_geocoder/Data/36005.csv'
 bronx_data = pd.read_csv(file_path)
 
 
@@ -36,7 +36,7 @@ missing_data = bronx_data[bronx_data['address'].isna()]
 
 
 #Reads in shape file - 'bronx_shape'
-shape_file_path = '../dspg23_reverse_geocoder/tl_2020_36005_tabblock20/tl_2020_36005_tabblock20.shp'
+shape_file_path = '../dspg23_reverse_geocoder/Data/tl_2020_36005_tabblock20/tl_2020_36005_tabblock20.shp'
 bronx_shape = gpd.read_file(shape_file_path)
 
 #Creates 'centroid' column based on 'geometry' - gives us latitude and longitude values
