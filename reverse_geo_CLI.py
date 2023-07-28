@@ -10,7 +10,7 @@ import geopandas as gpd
 import numpy as np
 
 
-#Creates Reverse geocoder tool
+#Reverse geocoder tool
 def reverse_geocode_tool(df):
     #Creates Geo column: combines latitude and longitude 
     df["Geo"] = df["latitude"].astype(str)+ ',' + df["longitude"].astype(str)
@@ -21,22 +21,36 @@ def reverse_geocode_tool(df):
     #Reverse geocodes 'Geo' column and populates 'address' column with results
     df['address'] = df['Geo'].apply(rgeocode)
     
+    #returns the reverse-geocoded dataframe
     return df
 
 
 def main():
+    #Creates argument parser
     parser = argparse.ArgumentParser(description="Reverse Geocoder")
-    parser.add_argument('--county_data', type=str, required=True, help="Path to data file.")
-    parser.add_argument('--shape_file', type=str, required=True, help="Path to shape file.")
+
+    #'cf' should be a path to a csv file that contains 'latitude' and 'longitude' columns
+    parser.add_argument('--cf', type=str, required=True, help="Path to data file.")
+
+    #'sf' is a path to a shp file that corresponds with the county in 'county_data'
+    parser.add_argument('--sf', type=str, required=True, help="Path to shape file.")
+
+    #'of' is a path to a csv file that contains the output dataframe
+    parser.add_argument('--of', type=str, required=True, help="Path to output file")
     
     args = parser.parse_args()
 
-    file_path = args.county_data
-    shape_file_path = args.shape_file
+    file_path = args.cf
+    shape_file_path = args.sf
+    output_path = args.of
 
     bronx_data = pd.read_csv(file_path)
     bronx_shape = gpd.read_file(shape_file_path)
 
+    #Prints number of missing addresses in 'bronx_data'
+    print("No. of missing Addresses:", sum(bronx_data['address'].isna()))
+
+    #'Missing_data': df containing all the rows of 'bronx_data' that have missing values in 'address' columns
     missing_data = bronx_data[bronx_data['address'].isna()]
 
     #Creates 'centroid' column based on 'geometry' - gives us latitude and longitude values
@@ -45,8 +59,7 @@ def main():
     #Converts 'GEOID20' column to int, so it can be merged with 'missing_data'
     bronx_shape['GEOID20']=bronx_shape['GEOID20'].astype(int)
 
-
-    #Merges 'missing_data' with 'bronx_shape' on 'GEOID20' col (left join)
+    #Merges 'missing_data' with 'bronx_shape' on 'GEOID20' col (left join) and drops unnecesary columns from 'merged_df'
     merged_df = missing_data.merge(bronx_shape, on='GEOID20', how="left")
     merged_df = merged_df.drop(['STATEFP20', 'COUNTYFP20', 'TRACTCE20', 'BLOCKCE20', 'NAME20', 'MTFCC20', 'UR20', 'UACE20', 'UATYPE20', 'FUNCSTAT20', 'ALAND20', 'AWATER20', 'INTPTLAT20', 'INTPTLON20', 'geometry'], axis=1)
 
@@ -55,15 +68,14 @@ def main():
         point = merged_df['centroid'][i]
         lat = point.y
         long = point.x
-    
         merged_df['latitude'][i] = lat
         merged_df['longitude'][i] = long
     
-    merged_df = merged_df.drop('centroid', axis=1)
-
     #Reverse geocodes 'merged_df'
     reverse_geocode_tool(merged_df)
-    merged_df = merged_df.drop('Geo', axis=1)
+
+    #Drops 'centroid' and 'Geo' columns from 'merged_df'
+    merged_df = merged_df.drop(['centroid', 'Geo'], axis=1)
 
     #Checks if 'address' column in 'bronx_data' is NaN
     #if so, updates 'address', 'latitude', and 'longitude' columns of 'bronx_data' 
@@ -74,8 +86,8 @@ def main():
             bronx_data['latitude'][i] = merged_df['latitude'][merged_df.loc[merged_df['GEOID20']==bronx_data['GEOID20'][i]].index[0]]
             bronx_data['longitude'][i] = merged_df['longitude'][merged_df.loc[merged_df['GEOID20']==bronx_data['GEOID20'][i]].index[0]]
 
-    #Saves output df as csv
-    bronx_data.to_csv('../dspg23_reverse_geocoder/36005_updated.csv')
+    #Saves output df as csv and prints the number of missing address in the output dataframe
+    bronx_data.to_csv(output_path)
     print("No. of missing Addresses:", sum(bronx_data['address'].isna()))
     print("Reverse geocoding complete!")
     

@@ -14,6 +14,8 @@ import numpy as np
 file_path = '../dspg23_reverse_geocoder/Data/36005.csv'
 bronx_data = pd.read_csv(file_path)
 
+#Prints number of missing addresses in 'bronx_data'
+print("No. of missing Addresses:", sum(bronx_data['address'].isna()))
 
 #Creates Reverse geocoder tool
 #Input: df w/ a 'latitude' and 'longitude' column, Output: df with updated 'address' column
@@ -77,6 +79,6 @@ for i in bronx_data.index:
 
 
 #Saves output df as csv
-bronx_data.to_csv('../dspg23_reverse_geocoder/36005_updated.csv')
-
-print(bronx_data)
+bronx_data.to_csv('../dspg23_reverse_geocoder/36005_output.csv')
+print("No. of missing Addresses:", sum(bronx_data['address'].isna()))
+print("Reverse geocoding complete!")
