@@ -44,23 +44,23 @@ def main():
     shape_file_path = args.sf
     output_path = args.of
 
-    bronx_data = pd.read_csv(file_path)
-    bronx_shape = gpd.read_file(shape_file_path)
+    county_data = pd.read_csv(file_path)
+    county_shape = gpd.read_file(shape_file_path)
 
-    #Prints number of missing addresses in 'bronx_data'
-    print("No. of missing Addresses:", sum(bronx_data['address'].isna()))
+    #Prints number of missing addresses in 'county_data'
+    print("No. of missing Addresses:", sum(county_data['address'].isna()))
 
-    #'Missing_data': df containing all the rows of 'bronx_data' that have missing values in 'address' columns
-    missing_data = bronx_data[bronx_data['address'].isna()]
+    #'Missing_data': df containing all the rows of 'county_data' that have missing values in 'address' columns
+    missing_data = county_data[county_data['address'].isna()]
 
     #Creates 'centroid' column based on 'geometry' - gives us latitude and longitude values
-    bronx_shape['centroid'] = bronx_shape['geometry'].centroid
+    county_shape['centroid'] = county_shape['geometry'].centroid
 
     #Converts 'GEOID20' column to int, so it can be merged with 'missing_data'
-    bronx_shape['GEOID20']=bronx_shape['GEOID20'].astype(int)
+    county_shape['GEOID20']=county_shape['GEOID20'].astype(int)
 
-    #Merges 'missing_data' with 'bronx_shape' on 'GEOID20' col (left join) and drops unnecesary columns from 'merged_df'
-    merged_df = missing_data.merge(bronx_shape, on='GEOID20', how="left")
+    #Merges 'missing_data' with 'county_shape' on 'GEOID20' col (left join) and drops unnecesary columns from 'merged_df'
+    merged_df = missing_data.merge(county_shape, on='GEOID20', how="left")
     merged_df = merged_df.drop(['STATEFP20', 'COUNTYFP20', 'TRACTCE20', 'BLOCKCE20', 'NAME20', 'MTFCC20', 'UR20', 'UACE20', 'UATYPE20', 'FUNCSTAT20', 'ALAND20', 'AWATER20', 'INTPTLAT20', 'INTPTLON20', 'geometry'], axis=1)
 
     #Poulates 'latitude' and 'longitude' cols of 'merged_df' with lat and long vals from 'centroid'
@@ -77,18 +77,18 @@ def main():
     #Drops 'centroid' and 'Geo' columns from 'merged_df'
     merged_df = merged_df.drop(['centroid', 'Geo'], axis=1)
 
-    #Checks if 'address' column in 'bronx_data' is NaN
-    #if so, updates 'address', 'latitude', and 'longitude' columns of 'bronx_data' 
-    #with 'address', 'latitude', and 'longitude' columns of 'test_data', based on 'GEOID20'
-    for i in bronx_data.index:
-        if pd.isna(bronx_data['address'][i]):  
-            bronx_data['address'][i] = merged_df['address'][merged_df.loc[merged_df['GEOID20']==bronx_data['GEOID20'][i]].index[0]]
-            bronx_data['latitude'][i] = merged_df['latitude'][merged_df.loc[merged_df['GEOID20']==bronx_data['GEOID20'][i]].index[0]]
-            bronx_data['longitude'][i] = merged_df['longitude'][merged_df.loc[merged_df['GEOID20']==bronx_data['GEOID20'][i]].index[0]]
+    #Checks if 'address' column in 'county_data' is NaN
+    #if so, updates 'address', 'latitude', and 'longitude' columns of 'county_data' 
+    #with 'address', 'latitude', and 'longitude' columns of 'merged_df', based on 'GEOID20'
+    for i in county_data.index:
+        if pd.isna(county_data['address'][i]):  
+            county_data['address'][i] = merged_df['address'][merged_df.loc[merged_df['GEOID20']==county_data['GEOID20'][i]].index[0]]
+            county_data['latitude'][i] = merged_df['latitude'][merged_df.loc[merged_df['GEOID20']==county_data['GEOID20'][i]].index[0]]
+            county_data['longitude'][i] = merged_df['longitude'][merged_df.loc[merged_df['GEOID20']==county_data['GEOID20'][i]].index[0]]
 
     #Saves output df as csv and prints the number of missing address in the output dataframe
-    bronx_data.to_csv(output_path)
-    print("No. of missing Addresses:", sum(bronx_data['address'].isna()))
+    county_data.to_csv(output_path)
+    print("No. of missing Addresses:", sum(county_data['address'].isna()))
     print("Reverse geocoding complete!")
     
 
